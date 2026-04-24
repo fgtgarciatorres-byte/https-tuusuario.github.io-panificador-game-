@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Panificador Game</title>
+<title>Panificador - Test Run</title>
 <style>
   body {
     margin: 0;
@@ -30,12 +30,12 @@ const ctx = canvas.getContext("2d");
 const sprite = new Image();
 sprite.src = "panificador_run.png";
 
-// 👇 AJUSTADO A TU IMAGEN
+// ⚠️ Ajustado a tu sprite real
 const FRAME_WIDTH = 224;
 const FRAME_HEIGHT = 224;
 const TOTAL_FRAMES = 8;
 
-// timing estilo Prince of Persia
+// timing orgánico
 const frameDurations = [120, 140, 100, 90, 120, 140, 100, 90];
 
 // FÍSICAS
@@ -43,23 +43,22 @@ const GRAVITY = 2000;
 const MOVE_SPEED = 260;
 const JUMP_FORCE = 720;
 
-// SUELO
-const GROUND_Y = 300;
+// SUELO (referencia de pies)
+const GROUND_Y = 360;
 
 // PLAYER
 const player = {
   x: 100,
-  y: GROUND_Y,
+  y: GROUND_Y, // 👈 ESTA ES LA POSICIÓN DE LOS PIES
   vx: 0,
   vy: 0,
-  width: FRAME_WIDTH,
-  height: FRAME_HEIGHT,
-  scale: 0.7,
+  scale: 0.6,
   onGround: true,
 
   frame: 0,
   frameTimer: 0,
-  state: "idle"
+  state: "idle",
+  facing: 1 // 1 derecha, -1 izquierda
 };
 
 // INPUT
@@ -95,10 +94,12 @@ function update(dt) {
 
   if (keys["arrowright"] || keys["d"]) {
     player.vx = MOVE_SPEED;
+    player.facing = 1;
   }
 
   if (keys["arrowleft"] || keys["a"]) {
     player.vx = -MOVE_SPEED;
+    player.facing = -1;
   }
 
   // SALTO
@@ -153,15 +154,17 @@ function update(dt) {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // SUELO
+  // SUELO VISUAL
   ctx.fillStyle = "#444";
-  ctx.fillRect(0, GROUND_Y + FRAME_HEIGHT * player.scale, canvas.width, 5);
+  ctx.fillRect(0, GROUND_Y, canvas.width, 4);
 
   ctx.save();
   ctx.translate(-cameraX, 0);
 
-  // DIBUJO PERSONAJE
-  if (player.vx < 0) {
+  const drawX = player.x;
+  const drawY = player.y - FRAME_HEIGHT * player.scale; // 👈 CLAVE
+
+  if (player.facing === -1) {
     ctx.scale(-1, 1);
 
     ctx.drawImage(
@@ -170,12 +173,11 @@ function draw() {
       0,
       FRAME_WIDTH,
       FRAME_HEIGHT,
-      -player.x - FRAME_WIDTH * player.scale,
-      player.y,
+      -drawX - FRAME_WIDTH * player.scale,
+      drawY,
       FRAME_WIDTH * player.scale,
       FRAME_HEIGHT * player.scale
     );
-
   } else {
     ctx.drawImage(
       sprite,
@@ -183,8 +185,8 @@ function draw() {
       0,
       FRAME_WIDTH,
       FRAME_HEIGHT,
-      player.x,
-      player.y,
+      drawX,
+      drawY,
       FRAME_WIDTH * player.scale,
       FRAME_HEIGHT * player.scale
     );
