@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Panificador - Test Run</title>
+<title>Panificador - Run OK</title>
 <style>
   body {
     margin: 0;
@@ -30,12 +30,16 @@ const ctx = canvas.getContext("2d");
 const sprite = new Image();
 sprite.src = "panificador_run.png";
 
-// ⚠️ Ajustado a tu sprite real
+// MEDIDAS REALES
 const FRAME_WIDTH = 224;
 const FRAME_HEIGHT = 224;
 const TOTAL_FRAMES = 8;
 
-// timing orgánico
+// 🔥 RECORTE (AJUSTADO A TU SPRITE)
+const SPRITE_OFFSET_Y = 80;
+const SPRITE_CROP_HEIGHT = 140;
+
+// timing animación
 const frameDurations = [120, 140, 100, 90, 120, 140, 100, 90];
 
 // FÍSICAS
@@ -43,22 +47,21 @@ const GRAVITY = 2000;
 const MOVE_SPEED = 260;
 const JUMP_FORCE = 720;
 
-// SUELO (referencia de pies)
+// SUELO (posición de pies)
 const GROUND_Y = 360;
 
 // PLAYER
 const player = {
   x: 100,
-  y: GROUND_Y, // 👈 ESTA ES LA POSICIÓN DE LOS PIES
+  y: GROUND_Y,
   vx: 0,
   vy: 0,
-  scale: 0.6,
+  scale: 0.7,
   onGround: true,
-
   frame: 0,
   frameTimer: 0,
   state: "idle",
-  facing: 1 // 1 derecha, -1 izquierda
+  facing: 1
 };
 
 // INPUT
@@ -89,7 +92,6 @@ function gameLoop(timestamp) {
 // ==============================
 function update(dt) {
 
-  // MOVIMIENTO
   player.vx = 0;
 
   if (keys["arrowright"] || keys["d"]) {
@@ -102,26 +104,24 @@ function update(dt) {
     player.facing = -1;
   }
 
-  // SALTO
   if ((keys[" "] || keys["arrowup"] || keys["w"]) && player.onGround) {
     player.vy = -JUMP_FORCE;
     player.onGround = false;
   }
 
-  // FÍSICAS
+  // físicas
   player.vy += GRAVITY * dt;
-
   player.x += player.vx * dt;
   player.y += player.vy * dt;
 
-  // COLISIÓN SUELO
+  // suelo
   if (player.y >= GROUND_Y) {
     player.y = GROUND_Y;
     player.vy = 0;
     player.onGround = true;
   }
 
-  // ESTADO
+  // estado
   if (!player.onGround) {
     player.state = "jump";
   } else if (player.vx !== 0) {
@@ -130,7 +130,7 @@ function update(dt) {
     player.state = "idle";
   }
 
-  // ANIMACIÓN
+  // animación
   if (player.state === "run") {
     player.frameTimer += dt * 1000;
 
@@ -144,7 +144,7 @@ function update(dt) {
     player.frame = 3;
   }
 
-  // CÁMARA
+  // cámara
   cameraX = player.x - canvas.width / 2 + 100;
 }
 
@@ -154,7 +154,7 @@ function update(dt) {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // SUELO VISUAL
+  // suelo
   ctx.fillStyle = "#444";
   ctx.fillRect(0, GROUND_Y, canvas.width, 4);
 
@@ -162,7 +162,7 @@ function draw() {
   ctx.translate(-cameraX, 0);
 
   const drawX = player.x;
-  const drawY = player.y - FRAME_HEIGHT * player.scale; // 👈 CLAVE
+  const drawY = player.y - SPRITE_CROP_HEIGHT * player.scale;
 
   if (player.facing === -1) {
     ctx.scale(-1, 1);
@@ -170,25 +170,26 @@ function draw() {
     ctx.drawImage(
       sprite,
       player.frame * FRAME_WIDTH,
-      0,
+      SPRITE_OFFSET_Y,
       FRAME_WIDTH,
-      FRAME_HEIGHT,
+      SPRITE_CROP_HEIGHT,
       -drawX - FRAME_WIDTH * player.scale,
       drawY,
       FRAME_WIDTH * player.scale,
-      FRAME_HEIGHT * player.scale
+      SPRITE_CROP_HEIGHT * player.scale
     );
+
   } else {
     ctx.drawImage(
       sprite,
       player.frame * FRAME_WIDTH,
-      0,
+      SPRITE_OFFSET_Y,
       FRAME_WIDTH,
-      FRAME_HEIGHT,
+      SPRITE_CROP_HEIGHT,
       drawX,
       drawY,
       FRAME_WIDTH * player.scale,
-      FRAME_HEIGHT * player.scale
+      SPRITE_CROP_HEIGHT * player.scale
     );
   }
 
