@@ -2,89 +2,202 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Panificador Run</title>
+<title>Panificador Game</title>
 <style>
   body {
     margin: 0;
-    background: #222;
+    background: #1e1e1e;
   }
   canvas {
     display: block;
     margin: auto;
-    background: #eee;
+    background: #dfe7ef;
   }
 </style>
 </head>
 <body>
 
-<canvas id="gameCanvas" width="800" height="400"></canvas>
+<canvas id="gameCanvas" width="900" height="450"></canvas>
 
 <script>
+// ==============================
+// CONFIG
+// ==============================
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// 📦 Cargar sprite
+// SPRITE
 const sprite = new Image();
-sprite.src = "panificador_run.png"; // ← tu imagen
+sprite.src = "panificador_run.png";
 
-// ⚙️ Configuración
-const FRAME_WIDTH = 128;   // ajusta según tu sprite real
-const FRAME_HEIGHT = 128;
+// 👇 AJUSTADO A TU IMAGEN
+const FRAME_WIDTH = 224;
+const FRAME_HEIGHT = 224;
 const TOTAL_FRAMES = 8;
 
-let currentFrame = 0;
-let frameTimer = 0;
-const FRAME_SPEED = 100; // ms por frame (más bajo = más rápido)
+// timing estilo Prince of Persia
+const frameDurations = [120, 140, 100, 90, 120, 140, 100, 90];
 
-// Posición personaje
-let x = 100;
-let y = 200;
+// FÍSICAS
+const GRAVITY = 2000;
+const MOVE_SPEED = 260;
+const JUMP_FORCE = 720;
 
-// Escala
-const SCALE = 1.5;
+// SUELO
+const GROUND_Y = 300;
 
-// 🎮 Loop principal
+// PLAYER
+const player = {
+  x: 100,
+  y: GROUND_Y,
+  vx: 0,
+  vy: 0,
+  width: FRAME_WIDTH,
+  height: FRAME_HEIGHT,
+  scale: 0.7,
+  onGround: true,
+
+  frame: 0,
+  frameTimer: 0,
+  state: "idle"
+};
+
+// INPUT
+const keys = {};
+window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+// CÁMARA
+let cameraX = 0;
+
+// ==============================
+// LOOP
+// ==============================
 let lastTime = 0;
 
 function gameLoop(timestamp) {
-    const deltaTime = timestamp - lastTime;
-    lastTime = timestamp;
+  const dt = (timestamp - lastTime) / 1000;
+  lastTime = timestamp;
 
-    update(deltaTime);
-    draw();
+  update(dt);
+  draw();
 
-    requestAnimationFrame(gameLoop);
+  requestAnimationFrame(gameLoop);
 }
 
-// 🔄 Update
-function update(deltaTime) {
-    frameTimer += deltaTime;
+// ==============================
+// UPDATE
+// ==============================
+function update(dt) {
 
-    if (frameTimer >= FRAME_SPEED) {
-        frameTimer = 0;
-        currentFrame = (currentFrame + 1) % TOTAL_FRAMES;
+  // MOVIMIENTO
+  player.vx = 0;
+
+  if (keys["arrowright"] || keys["d"]) {
+    player.vx = MOVE_SPEED;
+  }
+
+  if (keys["arrowleft"] || keys["a"]) {
+    player.vx = -MOVE_SPEED;
+  }
+
+  // SALTO
+  if ((keys[" "] || keys["arrowup"] || keys["w"]) && player.onGround) {
+    player.vy = -JUMP_FORCE;
+    player.onGround = false;
+  }
+
+  // FÍSICAS
+  player.vy += GRAVITY * dt;
+
+  player.x += player.vx * dt;
+  player.y += player.vy * dt;
+
+  // COLISIÓN SUELO
+  if (player.y >= GROUND_Y) {
+    player.y = GROUND_Y;
+    player.vy = 0;
+    player.onGround = true;
+  }
+
+  // ESTADO
+  if (!player.onGround) {
+    player.state = "jump";
+  } else if (player.vx !== 0) {
+    player.state = "run";
+  } else {
+    player.state = "idle";
+  }
+
+  // ANIMACIÓN
+  if (player.state === "run") {
+    player.frameTimer += dt * 1000;
+
+    if (player.frameTimer >= frameDurations[player.frame]) {
+      player.frameTimer = 0;
+      player.frame = (player.frame + 1) % TOTAL_FRAMES;
     }
+  } else if (player.state === "idle") {
+    player.frame = 0;
+  } else if (player.state === "jump") {
+    player.frame = 3;
+  }
+
+  // CÁMARA
+  cameraX = player.x - canvas.width / 2 + 100;
 }
 
-// 🎨 Draw
+// ==============================
+// DRAW
+// ==============================
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // SUELO
+  ctx.fillStyle = "#444";
+  ctx.fillRect(0, GROUND_Y + FRAME_HEIGHT * player.scale, canvas.width, 5);
+
+  ctx.save();
+  ctx.translate(-cameraX, 0);
+
+  // DIBUJO PERSONAJE
+  if (player.vx < 0) {
+    ctx.scale(-1, 1);
 
     ctx.drawImage(
-        sprite,
-        currentFrame * FRAME_WIDTH, 0, // origen en sprite sheet
-        FRAME_WIDTH,
-        FRAME_HEIGHT,
-        x,
-        y,
-        FRAME_WIDTH * SCALE,
-        FRAME_HEIGHT * SCALE
+      sprite,
+      player.frame * FRAME_WIDTH,
+      0,
+      FRAME_WIDTH,
+      FRAME_HEIGHT,
+      -player.x - FRAME_WIDTH * player.scale,
+      player.y,
+      FRAME_WIDTH * player.scale,
+      FRAME_HEIGHT * player.scale
     );
+
+  } else {
+    ctx.drawImage(
+      sprite,
+      player.frame * FRAME_WIDTH,
+      0,
+      FRAME_WIDTH,
+      FRAME_HEIGHT,
+      player.x,
+      player.y,
+      FRAME_WIDTH * player.scale,
+      FRAME_HEIGHT * player.scale
+    );
+  }
+
+  ctx.restore();
 }
 
-// 🚀 Start
+// ==============================
+// START
+// ==============================
 sprite.onload = () => {
-    requestAnimationFrame(gameLoop);
+  requestAnimationFrame(gameLoop);
 };
 </script>
 
