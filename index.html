@@ -1,12 +1,92 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Panificador</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Panificador Run</title>
+<style>
+  body {
+    margin: 0;
+    background: #222;
+  }
+  canvas {
+    display: block;
+    margin: auto;
+    background: #eee;
+  }
+</style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
-  <script src="game.js"></script>
+
+<canvas id="gameCanvas" width="800" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// 📦 Cargar sprite
+const sprite = new Image();
+sprite.src = "panificador_run.png"; // ← tu imagen
+
+// ⚙️ Configuración
+const FRAME_WIDTH = 128;   // ajusta según tu sprite real
+const FRAME_HEIGHT = 128;
+const TOTAL_FRAMES = 8;
+
+let currentFrame = 0;
+let frameTimer = 0;
+const FRAME_SPEED = 100; // ms por frame (más bajo = más rápido)
+
+// Posición personaje
+let x = 100;
+let y = 200;
+
+// Escala
+const SCALE = 1.5;
+
+// 🎮 Loop principal
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+    const deltaTime = timestamp - lastTime;
+    lastTime = timestamp;
+
+    update(deltaTime);
+    draw();
+
+    requestAnimationFrame(gameLoop);
+}
+
+// 🔄 Update
+function update(deltaTime) {
+    frameTimer += deltaTime;
+
+    if (frameTimer >= FRAME_SPEED) {
+        frameTimer = 0;
+        currentFrame = (currentFrame + 1) % TOTAL_FRAMES;
+    }
+}
+
+// 🎨 Draw
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.drawImage(
+        sprite,
+        currentFrame * FRAME_WIDTH, 0, // origen en sprite sheet
+        FRAME_WIDTH,
+        FRAME_HEIGHT,
+        x,
+        y,
+        FRAME_WIDTH * SCALE,
+        FRAME_HEIGHT * SCALE
+    );
+}
+
+// 🚀 Start
+sprite.onload = () => {
+    requestAnimationFrame(gameLoop);
+};
+</script>
+
 </body>
 </html>
